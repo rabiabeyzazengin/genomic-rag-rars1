@@ -1,0 +1,8 @@
+biopython
+chromadb
+sentence-transformers
+openai
+python-dotenv
+tenacity
+pydantic
+numpy
