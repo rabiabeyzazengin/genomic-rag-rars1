@@ -13,3 +13,4 @@ chroma_db/
 
 # OS files
 .DS_Store
+data/pubmed_raw.jsonl
