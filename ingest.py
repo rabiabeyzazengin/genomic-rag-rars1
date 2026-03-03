@@ -1,91 +1,102 @@
-import ssl
-import certifi
-ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
+import os
 import json
 import time
-from typing import List
+from typing import Dict, Any, List
+
+from dotenv import load_dotenv
+load_dotenv()
+
 from Bio import Entrez
-from tenacity import retry, stop_after_attempt, wait_exponential
 
-# Entrez API email zorunlu
-Entrez.email = "rabiabeyzazengin@gmail.com"  
+# Output
+OUT_PATH = "data/pubmed_raw.jsonl"
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def search_pubmed(query: str, max_results: int = 30) -> List[str]:
-    handle = Entrez.esearch(
-        db="pubmed",
-        term=query,
-        sort="date",
-        retmax=max_results,
-    )
-    record = Entrez.read(handle)
-    handle.close()
-    return record["IdList"]
+# Controls
+SEARCH_TERM = os.getenv("PUBMED_QUERY", "RARS1")
+RETMAX = int(os.getenv("PUBMED_RETMAX", "30"))
+SLEEP_SEC = float(os.getenv("PUBMED_SLEEP_SEC", "0.34"))
+
+# NCBI requires an email
+Entrez.email = os.getenv("ENTREZ_EMAIL", "example@example.com")
+
+def _ensure_dir(p: str) -> None:
+    os.makedirs(p, exist_ok=True)
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def fetch_details(id_list: List[str]):
-    ids = ",".join(id_list)
-    handle = Entrez.efetch(
-        db="pubmed",
-        id=ids,
-        rettype="abstract",
-        retmode="xml",
-    )
-    records = Entrez.read(handle)
-    handle.close()
-    return records
+def _fetch_pmids(term: str, retmax: int) -> List[str]:
+    h = Entrez.esearch(db="pubmed", term=term, retmax=retmax, sort="pub+date")
+    r = Entrez.read(h)
+    return r.get("IdList", []) or []
 
 
-def parse_records(records):
-    parsed = []
+def _fetch_details(pmids: List[str]) -> List[Dict[str, Any]]:
+    if not pmids:
+        return []
 
-    for article in records["PubmedArticle"]:
-        medline = article["MedlineCitation"]
-        article_data = medline["Article"]
+    # fetch in one shot (simple)
+    h = Entrez.efetch(db="pubmed", id=",".join(pmids), rettype="medline", retmode="xml")
+    data = Entrez.read(h)
 
-        pmid = medline["PMID"]
-        title = article_data.get("ArticleTitle", "")
-        abstract = ""
+    out: List[Dict[str, Any]] = []
+    articles = data.get("PubmedArticle", []) or []
+    for a in articles:
+        try:
+            med = a["MedlineCitation"]
+            art = med["Article"]
 
-        if "Abstract" in article_data:
-            abstract_parts = article_data["Abstract"]["AbstractText"]
-            abstract = " ".join(str(part) for part in abstract_parts)
+            pmid = str(med["PMID"])
+            title = str(art.get("ArticleTitle", "") or "")
 
-        doi = None
-        if "ELocationID" in article_data:
-            for item in article_data["ELocationID"]:
-                if item.attributes.get("EIdType") == "doi":
-                    doi = str(item)
+            # Abstract
+            abs_text = ""
+            if "Abstract" in art and "AbstractText" in art["Abstract"]:
+                parts = art["Abstract"]["AbstractText"]
+                if isinstance(parts, list):
+                    abs_text = " ".join([str(x) for x in parts if x])
+                else:
+                    abs_text = str(parts)
 
-        parsed.append({
-            "pmid": str(pmid),
-            "title": title,
-            "abstract": abstract,
-            "doi": doi
-        })
+            # DOI
+            doi = ""
+            try:
+                ids = a.get("PubmedData", {}).get("ArticleIdList", [])
+                for x in ids:
+                    if getattr(x, "attributes", {}).get("IdType") == "doi":
+                        doi = str(x)
+                        break
+            except Exception:
+                doi = ""
 
-    return parsed
+            out.append({
+                "pmid": pmid,
+                "doi": doi,
+                "title": title,
+                "abstract": abs_text
+            })
+        except Exception:
+            continue
+
+    return out
 
 
 def main():
-    query = "RARS1"
-    print(f"Searching PubMed for: {query}")
+    _ensure_dir("data")
 
-    ids = search_pubmed(query, max_results=30)
-    print(f"Found {len(ids)} articles")
+    pmids = _fetch_pmids(SEARCH_TERM, RETMAX)
+    print(f"[ingest] term={SEARCH_TERM} retmax={RETMAX} -> pmids={len(pmids)}")
 
-    records = fetch_details(ids)
-    articles = parse_records(records)
+    rows = _fetch_details(pmids)
 
-    with open("data/pubmed_raw.jsonl", "w") as f:
-        for article in articles:
-            f.write(json.dumps(article) + "\n")
+    # write jsonl
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
-    print("Saved to data/pubmed_raw.jsonl")
+    print(f"[ingest] wrote: {OUT_PATH} rows={len(rows)}")
+
+    # polite
+    time.sleep(SLEEP_SEC)
 
 
 if __name__ == "__main__":
-    import os
-    os.makedirs("data", exist_ok=True)
     main()

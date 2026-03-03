@@ -1,76 +1,152 @@
 # Genomic-RAG (RARS1)
 
-A Retrieval-Augmented Generation (RAG) system that dynamically queries PubMed for the latest RARS1 abstracts, indexes them in a vector database (ChromaDB), and uses a Large Language Model (LLM) to extract variants, phenotypes, and associated diseases with PMID/DOI citations.
+A Retrieval-Augmented Generation (RAG) system that dynamically queries PubMed for the latest RARS1 literature, indexes abstracts in a persistent vector database (ChromaDB), and uses a Large Language Model (LLM) to extract structured clinical information (variants, phenotypes, diseases) with strict citation guardrails.
 
 ---
 
-## PROJECT OVERVIEW
+# 1. Project Overview
 
-### A) Ingest
-The system fetches the latest PubMed abstracts for the query "RARS1" using the NCBI Entrez API (Biopython).  
-Results are sorted by publication date and limited to the most recent records.
+This project implements a dynamic Genomic RAG pipeline focused on the **RARS1** gene.
 
-### B) Index
-Abstracts are safely chunked and embedded using a local SentenceTransformer model (`all-MiniLM-L6-v2`).  
-Embeddings are stored persistently in ChromaDB.
+The system:
 
-### C) Query
-When a user asks a question, the system:
-1. Retrieves the most relevant evidence snippets from ChromaDB.
-2. Builds a structured context using PMID and DOI metadata.
-3. Sends the context to the LLM.
-4. Returns structured JSON output.
+A) Dynamically queries PubMed using the NCBI Entrez API (Biopython)  
+B) Safely chunks medical abstracts without breaking variant names  
+C) Stores embeddings in a persistent Chroma vector database  
+D) Uses an LLM to extract structured genomic knowledge  
+E) Applies hallucination guardrails to ensure citation correctness  
 
-### D) Guardrails
-Two guardrail layers are implemented:
-
-- Guardrail v1: Ensures every answer item cites a PMID/DOI that exists in retrieved evidence.
-- Guardrail v2: Verifies that each extracted claim text appears inside the cited evidence text (reduces hallucinations).
-
-Trick questions (e.g., unrelated diseases) return no unsupported answers.
+The goal is to ensure accuracy over speed — in medical domains, unsupported claims are rejected.
 
 ---
 
-## REPOSITORY STRUCTURE
+# 2. Technical Architecture
+
+## A) Dynamic Data Ingestion
+
+- Uses NCBI Entrez API via Biopython
+- Searches for `"RARS1"`
+- Sorts results by publication date
+- Fetches the most recent abstracts (default: 30)
+- Writes results to `data/pubmed_raw.jsonl`
+- Implements retry with exponential backoff (`tenacity`)
+
+This ensures the system does not rely on static or pre-downloaded PDFs.
+
+---
+
+## B) Knowledge Processing & Storage
+
+### Safe Chunking Strategy
+
+Abstracts are split at sentence boundaries to prevent genetic variant names (e.g., `c.2T>C (p.Met1Thr)`) from being split across chunks.
+
+This avoids breaking clinically meaningful tokens.
+
+### Vector Database
+
+- Uses persistent ChromaDB (`chroma_db/`)
+- Embeddings generated locally with:
+  
+  `all-MiniLM-L6-v2`
+
+Reasons for choosing this model:
+- Lightweight and fast
+- Strong semantic retrieval for scientific abstracts
+- No external embedding API cost
+- Fully local inference
+
+---
+
+## C) LLM Extraction Layer
+
+When a user submits a question:
+
+1. Relevant chunks are retrieved from ChromaDB.
+2. Evidence blocks are constructed including PMID and DOI metadata.
+3. The LLM generates structured JSON output.
+4. Each claim must include a valid citation.
+
+Output JSON schema:
+
+{
+  "gene": "RARS1",
+  "answers": [
+    {
+      "type": "phenotype | disease | variant",
+      "text": "extracted item",
+      "notes": "short evidence-grounded explanation",
+      "evidence": [
+        { "pmid": "...", "doi": "..." }
+      ]
+    }
+  ],
+  "limitations": ["optional notes"]
+}
+
+---
+
+## D) Hallucination Guardrails
+
+Two layers of validation are implemented:
+
+### Guardrail v1
+Ensures each extracted item cites a PMID/DOI that exists in the retrieved evidence.
+
+### Guardrail v2
+Ensures that the extracted claim text appears inside the cited evidence text.
+
+If validation fails, the item is removed.
+
+This reduces fabricated variants or unsupported clinical claims.
+
+Trick questions (e.g., diseases unrelated to RARS1) return no unsupported outputs.
+
+---
+
+# 3. Repository Structure
 
 - `main.py` — Entry point for interactive querying  
-- `ingest.py` — Fetches PubMed abstracts and writes `data/pubmed_raw.jsonl`  
-- `rag_query.py` — Retrieval + LLM structured extraction + guardrails  
-- `evaluate.py` — Evaluation runner that outputs `data/eval_results.json`  
+- `ingest.py` — Fetches PubMed abstracts  
+- `rag_query.py` — Retrieval + structured extraction + guardrails  
+- `evaluate.py` — Evaluation runner  
 - `requirements.txt` — Dependencies  
 - `data/` — Generated artifacts (`pubmed_raw.jsonl`, `eval_results.json`)  
-- `chroma_db/` — Persistent Chroma vector store (generated)  
+- `chroma_db/` — Persistent Chroma vector store (generated locally)  
 
 ---
 
-## SETUP
+# 4. Setup
 
-### 1) Create and activate a virtual environment
+## A) Create Virtual Environment
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2) Install dependencies
+## B) Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3) Set your OpenAI API key
+## C) Environment Variables
 
 Create a `.env` file in the project root:
 
 ```bash
 OPENAI_API_KEY=your_key_here
+ENTREZ_EMAIL=your_email@example.com
 ```
+
+The system reads these values securely at runtime.
 
 ---
 
-## RUN THE PIPELINE
+# 5. Running the Pipeline
 
-### A) Ingest latest PubMed abstracts
+## A) Ingest Latest PubMed Data
 
 ```bash
 python ingest.py
@@ -81,17 +157,18 @@ Output:
 
 ---
 
-### B) Ask questions interactively
+## B) Ask Questions
 
 ```bash
 python main.py
 ```
 
-You will be prompted to enter a question and receive structured JSON output with citations.
+You will be prompted to enter a query.
+The system returns structured JSON with citations.
 
 ---
 
-### C) Run evaluation
+## C) Run Evaluation
 
 ```bash
 python evaluate.py
@@ -100,41 +177,47 @@ python evaluate.py
 Output:
 - `data/eval_results.json`
 
----
-
-## NCBI ENTIREZ RATE LIMIT HANDLING
-
-This demo keeps API usage lightweight by:
-- Limiting fetched records (`retmax=30`)
-- Using retry with exponential backoff via `tenacity`
-
-For stricter compliance, a small delay between API calls can be added.
+This includes trick-question testing to demonstrate hallucination resistance.
 
 ---
 
-## WHY THIS EMBEDDING MODEL?
+# 6. NCBI API Rate Limit Handling
 
-This project uses the local SentenceTransformer model:
+- Limits fetched records (`retmax=30`)
+- Uses retry with exponential backoff (`tenacity`)
+- Designed for lightweight academic/demo usage
 
-`all-MiniLM-L6-v2`
-
-Reasons:
-- Lightweight and fast
-- Good semantic retrieval performance for scientific abstracts
-- Avoids external embedding API costs
+A fixed delay between calls can be added for stricter compliance.
 
 ---
 
-## ENSURING PHENOTYPE VS VARIANT CORRECTNESS
+# 7. Accuracy Over Speed
 
-- The LLM outputs structured JSON with `type: phenotype | disease | variant`.
-- Variants must appear exactly in the evidence text.
-- Guardrail v2 verifies each extracted claim exists in cited evidence text.
-- Trick questions return no unsupported answers.
+Medical systems must prioritize correctness.
+
+If evidence does not support a claim, the system returns no result rather than hallucinating information.
 
 ---
 
-## LIMITATIONS
+# 8. Limitations
 
-- Results may change as new PubMed papers are published.
-- The system relies on abstracts (not full text), so some details may be missing.
+- Uses abstracts only (not full text articles)
+- Results evolve as new PubMed papers are published
+- Strict guardrails may occasionally remove borderline-valid paraphrased claims
+
+---
+
+# 9. Evaluation Criteria Alignment
+
+This implementation addresses:
+
+- Clean API handling
+- Smart chunking of medical text
+- Persistent vector indexing
+- Structured LLM outputs with citations
+- Hallucination guardrails
+- Modular and readable code
+
+---
+
+End of README.

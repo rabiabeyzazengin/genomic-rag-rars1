@@ -1,40 +1,83 @@
 {
-  "generated_at": "2026-03-02T22:49:23.403184Z",
-  "collection": "rars1_collection",
+  "generated_at": "2026-03-03T19:54:39.321453Z",
+  "collection": "rars1",
+  "relevance_gate": {
+    "RETRIEVE_MAX_DISTANCE": 1.0,
+    "note": "If a question is unrelated, retrieval should yield 0 hits and the system returns empty answers."
+  },
   "notes": [
-    "This evaluation uses deterministic retrieval (local embeddings + Chroma) and probabilistic generation (LLM).",
-    "Guardrail v1 checks that cited PMID/DOI exists in retrieved evidence.",
-    "Guardrail v2 additionally verifies that each extracted claim (variant/phenotype/disease text) appears in the evidence text.",
-    "Trick questions are expected to return no supported answers."
+    "Deterministic retrieval (embeddings + Chroma), probabilistic generation (LLM).",
+    "Guardrail v1: each answer must cite PMID/DOI present in retrieved hits.",
+    "Guardrail v2: each claim text must appear in retrieved evidence text (simple containment).",
+    "Unrelated questions should return empty answers (I don't know) rather than hallucinations."
   ],
   "results": [
     {
       "test_id": "t1_variants_symptoms",
       "question": "What are the most recently reported variants in RARS1 and their associated symptoms?",
-      "elapsed_sec": 25.97,
+      "elapsed_sec": 17.0,
       "judge": {
         "status": "PASS",
-        "reason": "Returned supported answers with citations."
+        "reason": "Supported answers remained after guardrail."
       },
       "retrieval": {
         "top_k": 10,
-        "num_hits": 10,
+        "num_hits": 9,
         "hit_pmids": [
-          "33515434",
-          "33190326",
-          "41451236",
           "31814314",
-          "40594583",
+          "33515434",
+          "37186453",
           "38618971",
-          "37186453"
-        ]
+          "40594583"
+        ],
+        "distances": [
+          0.6379938721656799,
+          0.7016311287879944,
+          0.7058422565460205,
+          0.8204846382141113,
+          0.8219461441040039,
+          0.822835385799408,
+          0.8377573490142822,
+          0.8920575976371765,
+          0.915330171585083
+        ],
+        "max_distance_threshold": 1.0
       },
-      "guardrail_removed": [],
+      "guardrail_removed": [
+        {
+          "reason": "claim_not_found_in_evidence",
+          "item": {
+            "type": "phenotype",
+            "text": "Severe early-onset epileptic encephalopathy",
+            "notes": "Associated with RARS1 variants, presenting with brain atrophy.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          }
+        },
+        {
+          "reason": "claim_not_found_in_evidence",
+          "item": {
+            "type": "phenotype",
+            "text": "Intellectual disability and developmental delay",
+            "notes": "Common symptoms among patients with RARS1 biallelic mutations.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          }
+        }
+      ],
       "answers": [
         {
           "type": "disease",
-          "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
-          "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to severe symptoms including hypomyelination, language delay, and intellectual disability.",
+          "text": "Hypomyelinating leukodystrophy-9 (HLD-9)",
+          "notes": "Caused by biallelic pathogenic variants in RARS1, leading to severe clinical symptoms.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -45,7 +88,7 @@
         {
           "type": "variant",
           "text": "c.2T>C (p.Met1Thr)",
-          "notes": "This variant was identified in three patients with severe symptoms of HLD-9.",
+          "notes": "Identified in multiple patients with severe symptoms.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -56,7 +99,7 @@
         {
           "type": "variant",
           "text": "c.5A>G (p.Asp2Gly)",
-          "notes": "This is the most frequent RARS1 variant, associated with mild or intermediate phenotypes.",
+          "notes": "Most frequent variant associated with mild to intermediate phenotypes.",
           "evidence": [
             {
               "pmid": "31814314",
@@ -66,8 +109,8 @@
         },
         {
           "type": "variant",
-          "text": "c.1535G>A (p.Arg512Gln)",
-          "notes": "Identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+          "text": "c.5A>T (p.Asp2Val)",
+          "notes": "Pathogenic variant affecting ArgRS protein stability.",
           "evidence": [
             {
               "pmid": "37186453",
@@ -78,7 +121,7 @@
         {
           "type": "variant",
           "text": "c.1382G>A (p.Arg461His)",
-          "notes": "This variant was also identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+          "notes": "Pathogenic variant identified in patients with severe manifestations.",
           "evidence": [
             {
               "pmid": "37186453",
@@ -88,8 +131,8 @@
         },
         {
           "type": "variant",
-          "text": "c.5A>T (p.Asp2Val)",
-          "notes": "This variant was identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+          "text": "c.1535G>A (p.Arg512Gln)",
+          "notes": "Pathogenic variant associated with severe clinical manifestations.",
           "evidence": [
             {
               "pmid": "37186453",
@@ -104,8 +147,8 @@
         "answers": [
           {
             "type": "disease",
-            "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
-            "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to severe symptoms including hypomyelination, language delay, and intellectual disability.",
+            "text": "Hypomyelinating leukodystrophy-9 (HLD-9)",
+            "notes": "Caused by biallelic pathogenic variants in RARS1, leading to severe clinical symptoms.",
             "evidence": [
               {
                 "pmid": "38618971",
@@ -114,9 +157,31 @@
             ]
           },
           {
+            "type": "phenotype",
+            "text": "Severe early-onset epileptic encephalopathy",
+            "notes": "Associated with RARS1 variants, presenting with brain atrophy.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "Intellectual disability and developmental delay",
+            "notes": "Common symptoms among patients with RARS1 biallelic mutations.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          },
+          {
             "type": "variant",
             "text": "c.2T>C (p.Met1Thr)",
-            "notes": "This variant was identified in three patients with severe symptoms of HLD-9.",
+            "notes": "Identified in multiple patients with severe symptoms.",
             "evidence": [
               {
                 "pmid": "38618971",
@@ -127,7 +192,7 @@
           {
             "type": "variant",
             "text": "c.5A>G (p.Asp2Gly)",
-            "notes": "This is the most frequent RARS1 variant, associated with mild or intermediate phenotypes.",
+            "notes": "Most frequent variant associated with mild to intermediate phenotypes.",
             "evidence": [
               {
                 "pmid": "31814314",
@@ -137,8 +202,8 @@
           },
           {
             "type": "variant",
-            "text": "c.1535G>A (p.Arg512Gln)",
-            "notes": "Identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+            "text": "c.5A>T (p.Asp2Val)",
+            "notes": "Pathogenic variant affecting ArgRS protein stability.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -149,7 +214,7 @@
           {
             "type": "variant",
             "text": "c.1382G>A (p.Arg461His)",
-            "notes": "This variant was also identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+            "notes": "Pathogenic variant identified in patients with severe manifestations.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -159,8 +224,8 @@
           },
           {
             "type": "variant",
-            "text": "c.5A>T (p.Asp2Val)",
-            "notes": "This variant was identified in a patient with severe clinical manifestation of developmental and epileptic encephalopathy.",
+            "text": "c.1535G>A (p.Arg512Gln)",
+            "notes": "Pathogenic variant associated with severe clinical manifestations.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -175,29 +240,57 @@
     {
       "test_id": "t2_phenotypes",
       "question": "List phenotypes (clinical symptoms) associated with RARS1 variants.",
-      "elapsed_sec": 21.8,
+      "elapsed_sec": 16.08,
       "judge": {
         "status": "PASS",
-        "reason": "Returned supported answers with citations."
+        "reason": "Supported answers remained after guardrail."
       },
       "retrieval": {
         "top_k": 10,
         "num_hits": 10,
         "hit_pmids": [
-          "39542129",
-          "41451236",
           "31814314",
-          "40594583",
+          "33515434",
+          "37186453",
           "38618971",
-          "37186453"
-        ]
+          "40594583",
+          "41451236"
+        ],
+        "distances": [
+          0.6119871139526367,
+          0.7044883966445923,
+          0.7440338134765625,
+          0.8598952293395996,
+          0.8672322034835815,
+          0.8855708241462708,
+          0.8990111947059631,
+          0.8998866081237793,
+          0.9624112844467163,
+          0.9701899290084839
+        ],
+        "max_distance_threshold": 1.0
       },
-      "guardrail_removed": [],
+      "guardrail_removed": [
+        {
+          "reason": "claim_not_found_in_evidence",
+          "item": {
+            "type": "phenotype",
+            "text": "severe early-onset epileptic encephalopathy",
+            "notes": "Associated with RARS1 variants, presenting with brain atrophy.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          }
+        }
+      ],
       "answers": [
         {
-          "type": "phenotype",
-          "text": "hypomyelinating leukodystrophy",
-          "notes": "Biallelic variants in RARS1 cause hypomyelinating leukodystrophy, characterized by symptoms such as hypomyelination, language delay, and intellectual disability.",
+          "type": "disease",
+          "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
+          "notes": "Caused by biallelic pathogenic variants in RARS1, characterized by hypomyelination, language delay, and intellectual disability.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -207,19 +300,8 @@
         },
         {
           "type": "phenotype",
-          "text": "developmental and epileptic encephalopathy (DEE)",
-          "notes": "RARS1 variants are associated with severe phenotypes including DEE, which is characterized by intellectual disability and developmental delay.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "phenotype",
           "text": "nystagmus",
-          "notes": "Nystagmus is a common symptom associated with RARS1-related hypomyelinating leukodystrophy.",
+          "notes": "Common clinical symptom in patients with RARS1 variants, often associated with hypomyelination.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -230,7 +312,40 @@
         {
           "type": "phenotype",
           "text": "spasticity",
-          "notes": "Spasticity is another symptom observed in patients with RARS1-related hypomyelinating leukodystrophy.",
+          "notes": "Another common symptom linked to RARS1-related hypomyelination.",
+          "evidence": [
+            {
+              "pmid": "38618971",
+              "doi": "10.1002/mgg3.2435"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "intellectual disability",
+          "notes": "Frequently observed in patients with RARS1 variants.",
+          "evidence": [
+            {
+              "pmid": "37186453",
+              "doi": "10.1002/epi4.12751"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "developmental delay",
+          "notes": "Commonly reported in patients with RARS1-related conditions.",
+          "evidence": [
+            {
+              "pmid": "37186453",
+              "doi": "10.1002/epi4.12751"
+            }
+          ]
+        },
+        {
+          "type": "variant",
+          "text": "c.5A>G (p.Asp2Gly)",
+          "notes": "Identified in multiple patients, associated with a range of phenotypes from mild to severe.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -241,7 +356,7 @@
         {
           "type": "variant",
           "text": "c.2T>C (p.Met1Thr)",
-          "notes": "This variant has been identified in patients with severe clinical symptoms of RARS1-related hypomyelinating leukodystrophy.",
+          "notes": "Pathogenic variant linked to severe phenotypes.",
           "evidence": [
             {
               "pmid": "38618971",
@@ -251,30 +366,8 @@
         },
         {
           "type": "variant",
-          "text": "c.5A>G (p.Asp2Gly)",
-          "notes": "This variant is the most frequent RARS1 variant and is associated with mild or intermediate phenotypes.",
-          "evidence": [
-            {
-              "pmid": "31814314",
-              "doi": "10.1002/acn3.50960"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.5A>T (p.Asp2Val)",
-          "notes": "This variant has been shown to be pathogenic and is associated with severe clinical manifestations.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "variant",
           "text": "c.1382G>A (p.Arg461His)",
-          "notes": "This variant is associated with severe clinical manifestations in patients with RARS1-related disease.",
+          "notes": "Identified as pathogenic and associated with severe clinical manifestations.",
           "evidence": [
             {
               "pmid": "37186453",
@@ -285,214 +378,7 @@
         {
           "type": "variant",
           "text": "c.1535G>A (p.Arg512Gln)",
-          "notes": "This variant is associated with severe clinical manifestations in patients with RARS1-related disease.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        }
-      ],
-      "limitations": [],
-      "raw_output": {
-        "gene": "RARS1",
-        "answers": [
-          {
-            "type": "phenotype",
-            "text": "hypomyelinating leukodystrophy",
-            "notes": "Biallelic variants in RARS1 cause hypomyelinating leukodystrophy, characterized by symptoms such as hypomyelination, language delay, and intellectual disability.",
-            "evidence": [
-              {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
-              }
-            ]
-          },
-          {
-            "type": "phenotype",
-            "text": "developmental and epileptic encephalopathy (DEE)",
-            "notes": "RARS1 variants are associated with severe phenotypes including DEE, which is characterized by intellectual disability and developmental delay.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          },
-          {
-            "type": "phenotype",
-            "text": "nystagmus",
-            "notes": "Nystagmus is a common symptom associated with RARS1-related hypomyelinating leukodystrophy.",
-            "evidence": [
-              {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
-              }
-            ]
-          },
-          {
-            "type": "phenotype",
-            "text": "spasticity",
-            "notes": "Spasticity is another symptom observed in patients with RARS1-related hypomyelinating leukodystrophy.",
-            "evidence": [
-              {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.2T>C (p.Met1Thr)",
-            "notes": "This variant has been identified in patients with severe clinical symptoms of RARS1-related hypomyelinating leukodystrophy.",
-            "evidence": [
-              {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.5A>G (p.Asp2Gly)",
-            "notes": "This variant is the most frequent RARS1 variant and is associated with mild or intermediate phenotypes.",
-            "evidence": [
-              {
-                "pmid": "31814314",
-                "doi": "10.1002/acn3.50960"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.5A>T (p.Asp2Val)",
-            "notes": "This variant has been shown to be pathogenic and is associated with severe clinical manifestations.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.1382G>A (p.Arg461His)",
-            "notes": "This variant is associated with severe clinical manifestations in patients with RARS1-related disease.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.1535G>A (p.Arg512Gln)",
-            "notes": "This variant is associated with severe clinical manifestations in patients with RARS1-related disease.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          }
-        ],
-        "limitations": []
-      }
-    },
-    {
-      "test_id": "t3_diseases",
-      "question": "Which diseases are associated with RARS1?",
-      "elapsed_sec": 16.5,
-      "judge": {
-        "status": "PASS",
-        "reason": "Returned supported answers with citations."
-      },
-      "retrieval": {
-        "top_k": 10,
-        "num_hits": 10,
-        "hit_pmids": [
-          "39542129",
-          "41451236",
-          "31814314",
-          "40594583",
-          "38618971",
-          "37186453"
-        ]
-      },
-      "guardrail_removed": [],
-      "answers": [
-        {
-          "type": "disease",
-          "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
-          "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to a range of symptoms including hypomyelination, language delay, and intellectual disability.",
-          "evidence": [
-            {
-              "pmid": "38618971",
-              "doi": "10.1002/mgg3.2435"
-            }
-          ]
-        },
-        {
-          "type": "disease",
-          "text": "developmental and epileptic encephalopathy (DEE)",
-          "notes": "Patients with RARS1 biallelic mutations frequently exhibit DEE, which is a severe phenotype associated with hypomyelinating leukodystrophy.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.2T>C (p.Met1Thr)",
-          "notes": "This variant has been identified in patients with HLD-9 and is associated with severe clinical symptoms.",
-          "evidence": [
-            {
-              "pmid": "38618971",
-              "doi": "10.1002/mgg3.2435"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.5A>G (p.Asp2Gly)",
-          "notes": "This variant has been identified in multiple patients and is associated with mild or intermediate phenotypes.",
-          "evidence": [
-            {
-              "pmid": "31814314",
-              "doi": "10.1002/acn3.50960"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.5A>T (p.Asp2Val)",
-          "notes": "This variant has been identified in patients with severe clinical manifestations of DEE.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.1382G>A (p.Arg461His)",
-          "notes": "This variant is pathogenic and affects the expression of ArgRS, contributing to the disease phenotype.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.1535G>A (p.Arg512Gln)",
-          "notes": "This variant has been identified in patients with hypomyelinating leukodystrophy and DEE.",
+          "notes": "Another pathogenic variant associated with severe phenotypes.",
           "evidence": [
             {
               "pmid": "37186453",
@@ -508,7 +394,7 @@
           {
             "type": "disease",
             "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
-            "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to a range of symptoms including hypomyelination, language delay, and intellectual disability.",
+            "notes": "Caused by biallelic pathogenic variants in RARS1, characterized by hypomyelination, language delay, and intellectual disability.",
             "evidence": [
               {
                 "pmid": "38618971",
@@ -517,9 +403,9 @@
             ]
           },
           {
-            "type": "disease",
-            "text": "developmental and epileptic encephalopathy (DEE)",
-            "notes": "Patients with RARS1 biallelic mutations frequently exhibit DEE, which is a severe phenotype associated with hypomyelinating leukodystrophy.",
+            "type": "phenotype",
+            "text": "severe early-onset epileptic encephalopathy",
+            "notes": "Associated with RARS1 variants, presenting with brain atrophy.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -528,42 +414,75 @@
             ]
           },
           {
-            "type": "variant",
-            "text": "c.2T>C (p.Met1Thr)",
-            "notes": "This variant has been identified in patients with HLD-9 and is associated with severe clinical symptoms.",
+            "type": "phenotype",
+            "text": "nystagmus",
+            "notes": "Common clinical symptom in patients with RARS1 variants, often associated with hypomyelination.",
             "evidence": [
               {
                 "pmid": "38618971",
                 "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "spasticity",
+            "notes": "Another common symptom linked to RARS1-related hypomyelination.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "intellectual disability",
+            "notes": "Frequently observed in patients with RARS1 variants.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "developmental delay",
+            "notes": "Commonly reported in patients with RARS1-related conditions.",
+            "evidence": [
+              {
+                "pmid": "37186453",
+                "doi": "10.1002/epi4.12751"
               }
             ]
           },
           {
             "type": "variant",
             "text": "c.5A>G (p.Asp2Gly)",
-            "notes": "This variant has been identified in multiple patients and is associated with mild or intermediate phenotypes.",
+            "notes": "Identified in multiple patients, associated with a range of phenotypes from mild to severe.",
             "evidence": [
               {
-                "pmid": "31814314",
-                "doi": "10.1002/acn3.50960"
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
               }
             ]
           },
           {
             "type": "variant",
-            "text": "c.5A>T (p.Asp2Val)",
-            "notes": "This variant has been identified in patients with severe clinical manifestations of DEE.",
+            "text": "c.2T>C (p.Met1Thr)",
+            "notes": "Pathogenic variant linked to severe phenotypes.",
             "evidence": [
               {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
               }
             ]
           },
           {
             "type": "variant",
             "text": "c.1382G>A (p.Arg461His)",
-            "notes": "This variant is pathogenic and affects the expression of ArgRS, contributing to the disease phenotype.",
+            "notes": "Identified as pathogenic and associated with severe clinical manifestations.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -574,7 +493,7 @@
           {
             "type": "variant",
             "text": "c.1535G>A (p.Arg512Gln)",
-            "notes": "This variant has been identified in patients with hypomyelinating leukodystrophy and DEE.",
+            "notes": "Another pathogenic variant associated with severe phenotypes.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -587,52 +506,274 @@
       }
     },
     {
-      "test_id": "t4_specific_variant",
-      "question": "Is variant c.5A>G reported in RARS1, and what phenotypes are described?",
-      "elapsed_sec": 11.03,
+      "test_id": "t3_diseases",
+      "question": "Which diseases are associated with RARS1?",
+      "elapsed_sec": 11.21,
       "judge": {
         "status": "PASS",
-        "reason": "Returned supported answers with citations."
+        "reason": "Supported answers remained after guardrail."
       },
       "retrieval": {
         "top_k": 10,
-        "num_hits": 10,
+        "num_hits": 6,
         "hit_pmids": [
-          "33515434",
-          "39762984",
-          "41451236",
           "31814314",
-          "40594583",
+          "33515434",
           "38618971",
-          "37186453"
-        ]
+          "40594583"
+        ],
+        "distances": [
+          0.8579131364822388,
+          0.8656939268112183,
+          0.8891379833221436,
+          0.9468632340431213,
+          0.9567419290542603,
+          0.9875094294548035
+        ],
+        "max_distance_threshold": 1.0
       },
-      "guardrail_removed": [],
+      "guardrail_removed": [
+        {
+          "reason": "claim_not_found_in_evidence",
+          "item": {
+            "type": "phenotype",
+            "text": "hypomyelination, language delay, intellectual disability, developmental delay",
+            "notes": "These symptoms were observed in patients with RARS1-related disease.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          }
+        }
+      ],
       "answers": [
         {
-          "type": "variant",
-          "text": "c.5A>G",
-          "notes": "This variant is reported in multiple patients with RARS1-related hypomyelinating leukodystrophy.",
+          "type": "disease",
+          "text": "Hypomyelinating leukodystrophy-9 (HLD-9)",
+          "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to severe clinical symptoms.",
           "evidence": [
             {
               "pmid": "38618971",
               "doi": "10.1002/mgg3.2435"
-            },
+            }
+          ]
+        },
+        {
+          "type": "variant",
+          "text": "c.2T>C (p.Met1Thr)",
+          "notes": "Identified in three patients with HLD-9, this variant is pathogenic.",
+          "evidence": [
             {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
+              "pmid": "38618971",
+              "doi": "10.1002/mgg3.2435"
+            }
+          ]
+        },
+        {
+          "type": "variant",
+          "text": "c.5A>G (p.Asp2Gly)",
+          "notes": "This variant was identified in 11 patients and is associated with decreased ArgRS activity.",
+          "evidence": [
+            {
+              "pmid": "38618971",
+              "doi": "10.1002/mgg3.2435"
             }
           ]
         },
         {
           "type": "phenotype",
-          "text": "hypomyelinating leukodystrophy",
-          "notes": "Biallelic variants in RARS1, including c.5A>G, are associated with hypomyelinating leukodystrophy, which can present with a range of severity.",
+          "text": "severe, early-onset epileptic encephalopathy with brain atrophy",
+          "notes": "RARS1 variants can lead to a spectrum of symptoms, including severe neurological conditions.",
           "evidence": [
             {
               "pmid": "31814314",
               "doi": "10.1002/acn3.50960"
-            },
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "nystagmus and spasticity",
+          "notes": "These are part of the classic presentation associated with RARS1-related hypomyelination.",
+          "evidence": [
+            {
+              "pmid": "31814314",
+              "doi": "10.1002/acn3.50960"
+            }
+          ]
+        }
+      ],
+      "limitations": [],
+      "raw_output": {
+        "gene": "RARS1",
+        "answers": [
+          {
+            "type": "disease",
+            "text": "Hypomyelinating leukodystrophy-9 (HLD-9)",
+            "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, leading to severe clinical symptoms.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "variant",
+            "text": "c.2T>C (p.Met1Thr)",
+            "notes": "Identified in three patients with HLD-9, this variant is pathogenic.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "variant",
+            "text": "c.5A>G (p.Asp2Gly)",
+            "notes": "This variant was identified in 11 patients and is associated with decreased ArgRS activity.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "hypomyelination, language delay, intellectual disability, developmental delay",
+            "notes": "These symptoms were observed in patients with RARS1-related disease.",
+            "evidence": [
+              {
+                "pmid": "38618971",
+                "doi": "10.1002/mgg3.2435"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "severe, early-onset epileptic encephalopathy with brain atrophy",
+            "notes": "RARS1 variants can lead to a spectrum of symptoms, including severe neurological conditions.",
+            "evidence": [
+              {
+                "pmid": "31814314",
+                "doi": "10.1002/acn3.50960"
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "nystagmus and spasticity",
+            "notes": "These are part of the classic presentation associated with RARS1-related hypomyelination.",
+            "evidence": [
+              {
+                "pmid": "31814314",
+                "doi": "10.1002/acn3.50960"
+              }
+            ]
+          }
+        ],
+        "limitations": []
+      }
+    },
+    {
+      "test_id": "t4_specific_variant",
+      "question": "Is variant c.5A>G reported in RARS1, and what phenotypes are described?",
+      "elapsed_sec": 12.95,
+      "judge": {
+        "status": "PASS",
+        "reason": "Supported answers remained after guardrail."
+      },
+      "retrieval": {
+        "top_k": 10,
+        "num_hits": 7,
+        "hit_pmids": [
+          "31814314",
+          "33515434",
+          "37186453",
+          "38618971",
+          "40594583"
+        ],
+        "distances": [
+          0.7969386577606201,
+          0.8601371049880981,
+          0.913406252861023,
+          0.9446606636047363,
+          0.9519104957580566,
+          0.9675421714782715,
+          0.9838935136795044
+        ],
+        "max_distance_threshold": 1.0
+      },
+      "guardrail_removed": [
+        {
+          "reason": "claim_not_found_in_evidence",
+          "item": {
+            "type": "phenotype",
+            "text": "mild phenotype",
+            "notes": "Patients with the c.5A>G variant typically exhibit mild symptoms, including minimal cognitive impairment and preserved independent walking.",
+            "evidence": [
+              {
+                "pmid": "31814314",
+                "doi": "10.1002/acn3.50960"
+              }
+            ]
+          }
+        }
+      ],
+      "answers": [
+        {
+          "type": "variant",
+          "text": "c.5A>G",
+          "notes": "This variant is the most frequent RARS1 variant and is associated with mild or intermediate phenotypes.",
+          "evidence": [
+            {
+              "pmid": "31814314",
+              "doi": "10.1002/acn3.50960"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "intermediate phenotype",
+          "notes": "The c.5A>G variant can also lead to intermediate phenotypes, characterized by symptoms such as nystagmus and spasticity.",
+          "evidence": [
+            {
+              "pmid": "31814314",
+              "doi": "10.1002/acn3.50960"
+            }
+          ]
+        },
+        {
+          "type": "disease",
+          "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
+          "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, including c.5A>G, leading to a range of symptoms.",
+          "evidence": [
+            {
+              "pmid": "38618971",
+              "doi": "10.1002/mgg3.2435"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "severe phenotype",
+          "notes": "Truncating variants and variants affecting amino acids close to the ArgRS active center lead to severe phenotypes, including early onset epileptic encephalopathy.",
+          "evidence": [
+            {
+              "pmid": "31814314",
+              "doi": "10.1002/acn3.50960"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "intellectual disability",
+          "notes": "Intellectual disability is a common symptom among patients with RARS1 biallelic mutations.",
+          "evidence": [
             {
               "pmid": "37186453",
               "doi": "10.1002/epi4.12751"
@@ -641,12 +782,23 @@
         },
         {
           "type": "phenotype",
-          "text": "developmental and epileptic encephalopathy",
-          "notes": "Patients with RARS1 biallelic mutations frequently exhibit developmental and epileptic encephalopathy as part of their clinical presentation.",
+          "text": "developmental delay",
+          "notes": "Developmental delay is frequently observed in patients with RARS1-related disease.",
           "evidence": [
             {
               "pmid": "37186453",
               "doi": "10.1002/epi4.12751"
+            }
+          ]
+        },
+        {
+          "type": "phenotype",
+          "text": "hypomyelination",
+          "notes": "Hypomyelination is a classic presentation in patients with RARS1 variants, including c.5A>G.",
+          "evidence": [
+            {
+              "pmid": "38618971",
+              "doi": "10.1002/mgg3.2435"
             }
           ]
         }
@@ -658,235 +810,41 @@
           {
             "type": "variant",
             "text": "c.5A>G",
-            "notes": "This variant is reported in multiple patients with RARS1-related hypomyelinating leukodystrophy.",
-            "evidence": [
-              {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
-              },
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          },
-          {
-            "type": "phenotype",
-            "text": "hypomyelinating leukodystrophy",
-            "notes": "Biallelic variants in RARS1, including c.5A>G, are associated with hypomyelinating leukodystrophy, which can present with a range of severity.",
+            "notes": "This variant is the most frequent RARS1 variant and is associated with mild or intermediate phenotypes.",
             "evidence": [
               {
                 "pmid": "31814314",
                 "doi": "10.1002/acn3.50960"
-              },
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
               }
             ]
           },
           {
             "type": "phenotype",
-            "text": "developmental and epileptic encephalopathy",
-            "notes": "Patients with RARS1 biallelic mutations frequently exhibit developmental and epileptic encephalopathy as part of their clinical presentation.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          }
-        ],
-        "limitations": []
-      }
-    },
-    {
-      "test_id": "t5_trick_unrelated",
-      "question": "Does RARS1 cause breast cancer? Provide the evidence.",
-      "elapsed_sec": 2.05,
-      "judge": {
-        "status": "PASS",
-        "reason": "Trick question: model returned no supported answers (no hallucination)."
-      },
-      "retrieval": {
-        "top_k": 10,
-        "num_hits": 10,
-        "hit_pmids": [
-          "35047511",
-          "39542129",
-          "41451236",
-          "31814314",
-          "40594583",
-          "38618971",
-          "37186453"
-        ]
-      },
-      "guardrail_removed": [],
-      "answers": [],
-      "limitations": [
-        "No evidence found linking RARS1 to breast cancer."
-      ],
-      "raw_output": {
-        "gene": "RARS1",
-        "answers": [],
-        "limitations": [
-          "No evidence found linking RARS1 to breast cancer."
-        ]
-      }
-    },
-    {
-      "test_id": "t6_trick_unrelated",
-      "question": "Is RARS1 associated with Type 2 diabetes? Provide PubMed evidence.",
-      "elapsed_sec": 1.85,
-      "judge": {
-        "status": "PASS",
-        "reason": "Trick question: model returned no supported answers (no hallucination)."
-      },
-      "retrieval": {
-        "top_k": 10,
-        "num_hits": 10,
-        "hit_pmids": [
-          "39542129",
-          "41451236",
-          "31814314",
-          "40594583",
-          "38618971",
-          "37186453"
-        ]
-      },
-      "guardrail_removed": [],
-      "answers": [],
-      "limitations": [
-        "No evidence found linking RARS1 to Type 2 diabetes."
-      ],
-      "raw_output": {
-        "gene": "RARS1",
-        "answers": [],
-        "limitations": [
-          "No evidence found linking RARS1 to Type 2 diabetes."
-        ]
-      }
-    },
-    {
-      "test_id": "t7_guardrail_v2_claim_check",
-      "question": "List phenotypes (clinical symptoms) associated with RARS1 variants, including autism.",
-      "elapsed_sec": 15.11,
-      "judge": {
-        "status": "PASS",
-        "reason": "Guardrail test: autism was not included in answers; model avoided unsupported claim."
-      },
-      "retrieval": {
-        "top_k": 10,
-        "num_hits": 10,
-        "hit_pmids": [
-          "33190326",
-          "39762984",
-          "41451236",
-          "31814314",
-          "40594583",
-          "38618971",
-          "37186453"
-        ]
-      },
-      "guardrail_removed": [],
-      "answers": [
-        {
-          "type": "phenotype",
-          "text": "hypomyelination",
-          "notes": "Hypomyelination is a classic presentation associated with RARS1 variants.",
-          "evidence": [
-            {
-              "pmid": "31814314",
-              "doi": "10.1002/acn3.50960"
-            },
-            {
-              "pmid": "38618971",
-              "doi": "10.1002/mgg3.2435"
-            }
-          ]
-        },
-        {
-          "type": "phenotype",
-          "text": "language delay",
-          "notes": "Language delay is a common symptom observed in patients with RARS1-related disease.",
-          "evidence": [
-            {
-              "pmid": "38618971",
-              "doi": "10.1002/mgg3.2435"
-            }
-          ]
-        },
-        {
-          "type": "phenotype",
-          "text": "intellectual disability",
-          "notes": "Intellectual disability is frequently reported in patients with RARS1 variants.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "phenotype",
-          "text": "developmental delay",
-          "notes": "Developmental delay is a common symptom associated with RARS1-related conditions.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "phenotype",
-          "text": "epileptic encephalopathy",
-          "notes": "Severe clinical manifestations include early-onset epileptic encephalopathy.",
-          "evidence": [
-            {
-              "pmid": "37186453",
-              "doi": "10.1002/epi4.12751"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.2T>C (p.Met1Thr)",
-          "notes": "This variant is associated with severe clinical symptoms in patients.",
-          "evidence": [
-            {
-              "pmid": "38618971",
-              "doi": "10.1002/mgg3.2435"
-            }
-          ]
-        },
-        {
-          "type": "variant",
-          "text": "c.5A>G (p.Asp2Gly)",
-          "notes": "This variant is the most frequent and leads to mild or intermediate phenotypes.",
-          "evidence": [
-            {
-              "pmid": "31814314",
-              "doi": "10.1002/acn3.50960"
-            }
-          ]
-        }
-      ],
-      "limitations": [
-        "No evidence found specifically linking RARS1 variants to autism."
-      ],
-      "raw_output": {
-        "gene": "RARS1",
-        "answers": [
-          {
-            "type": "phenotype",
-            "text": "hypomyelination",
-            "notes": "Hypomyelination is a classic presentation associated with RARS1 variants.",
+            "text": "mild phenotype",
+            "notes": "Patients with the c.5A>G variant typically exhibit mild symptoms, including minimal cognitive impairment and preserved independent walking.",
             "evidence": [
               {
                 "pmid": "31814314",
                 "doi": "10.1002/acn3.50960"
-              },
+              }
+            ]
+          },
+          {
+            "type": "phenotype",
+            "text": "intermediate phenotype",
+            "notes": "The c.5A>G variant can also lead to intermediate phenotypes, characterized by symptoms such as nystagmus and spasticity.",
+            "evidence": [
+              {
+                "pmid": "31814314",
+                "doi": "10.1002/acn3.50960"
+              }
+            ]
+          },
+          {
+            "type": "disease",
+            "text": "hypomyelinating leukodystrophy-9 (HLD-9)",
+            "notes": "HLD-9 is caused by biallelic pathogenic variants in RARS1, including c.5A>G, leading to a range of symptoms.",
+            "evidence": [
               {
                 "pmid": "38618971",
                 "doi": "10.1002/mgg3.2435"
@@ -895,19 +853,19 @@
           },
           {
             "type": "phenotype",
-            "text": "language delay",
-            "notes": "Language delay is a common symptom observed in patients with RARS1-related disease.",
+            "text": "severe phenotype",
+            "notes": "Truncating variants and variants affecting amino acids close to the ArgRS active center lead to severe phenotypes, including early onset epileptic encephalopathy.",
             "evidence": [
               {
-                "pmid": "38618971",
-                "doi": "10.1002/mgg3.2435"
+                "pmid": "31814314",
+                "doi": "10.1002/acn3.50960"
               }
             ]
           },
           {
             "type": "phenotype",
             "text": "intellectual disability",
-            "notes": "Intellectual disability is frequently reported in patients with RARS1 variants.",
+            "notes": "Intellectual disability is a common symptom among patients with RARS1 biallelic mutations.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -918,7 +876,7 @@
           {
             "type": "phenotype",
             "text": "developmental delay",
-            "notes": "Developmental delay is a common symptom associated with RARS1-related conditions.",
+            "notes": "Developmental delay is frequently observed in patients with RARS1-related disease.",
             "evidence": [
               {
                 "pmid": "37186453",
@@ -928,40 +886,46 @@
           },
           {
             "type": "phenotype",
-            "text": "epileptic encephalopathy",
-            "notes": "Severe clinical manifestations include early-onset epileptic encephalopathy.",
-            "evidence": [
-              {
-                "pmid": "37186453",
-                "doi": "10.1002/epi4.12751"
-              }
-            ]
-          },
-          {
-            "type": "variant",
-            "text": "c.2T>C (p.Met1Thr)",
-            "notes": "This variant is associated with severe clinical symptoms in patients.",
+            "text": "hypomyelination",
+            "notes": "Hypomyelination is a classic presentation in patients with RARS1 variants, including c.5A>G.",
             "evidence": [
               {
                 "pmid": "38618971",
                 "doi": "10.1002/mgg3.2435"
               }
             ]
-          },
-          {
-            "type": "variant",
-            "text": "c.5A>G (p.Asp2Gly)",
-            "notes": "This variant is the most frequent and leads to mild or intermediate phenotypes.",
-            "evidence": [
-              {
-                "pmid": "31814314",
-                "doi": "10.1002/acn3.50960"
-              }
-            ]
           }
         ],
+        "limitations": []
+      }
+    },
+    {
+      "test_id": "t5_trick_unrelated",
+      "question": "Does RARS1 cause breast cancer? Provide the evidence.",
+      "elapsed_sec": 0.11,
+      "judge": {
+        "status": "PASS",
+        "reason": "No evidence -> returned empty answers (I don't know behavior)."
+      },
+      "retrieval": {
+        "top_k": 10,
+        "num_hits": 0,
+        "hit_pmids": [],
+        "distances": [],
+        "max_distance_threshold": 1.0
+      },
+      "guardrail_removed": [],
+      "answers": [],
+      "limitations": [
+        "No relevant evidence retrieved from the indexed abstracts for this question.",
+        "No evidence retrieved (relevance gate)."
+      ],
+      "raw_output": {
+        "gene": "RARS1",
+        "answers": [],
         "limitations": [
-          "No evidence found specifically linking RARS1 variants to autism."
+          "No relevant evidence retrieved from the indexed abstracts for this question.",
+          "No evidence retrieved (relevance gate)."
         ]
       }
     }

@@ -6,3 +6,5 @@ python-dotenv
 tenacity
 pydantic
 numpy
+certifi
+requests
